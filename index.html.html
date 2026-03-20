@@ -888,10 +888,7 @@
                     naoVerificadoCount++;
                 }
                 
-                report += item.id + '. ' + item.nome + ': ' + statusIcon;
-                if (statusText) {
-                    report += ' ' + statusText;
-                }
+                report += item.id + '. ' + item.nome + ': ' + statusIcon + ' ' + statusText;
                 if (item.observacao) {
                     report += '\n   Obs: ' + item.observacao;
                 }
