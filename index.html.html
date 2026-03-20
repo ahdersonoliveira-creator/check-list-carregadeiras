@@ -711,96 +711,113 @@
             }
         }
 
-        // Tab switching
-        function switchTab(event, tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-            const target = document.getElementById(tabName);
-            if (target) target.classList.add('active');
+        // Navigation
+        function switchTab(event, tabId) {
+            const tabs = document.querySelectorAll('.tab-content');
+            const buttons = document.querySelectorAll('.tab-button');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
             event.currentTarget.classList.add('active');
-            updateSummary();
+            
+            if (tabId === 'resumo') updateSummary();
         }
 
-        // Falhas
-        function renderFalhas() {
-            const container = document.getElementById('falhas-container');
-            container.innerHTML = falhas.map((falha, idx) => `
-                <div class="card" style="margin-bottom: 1rem;">
-                    <div class="card-header">
-                        <h2>Falha ${idx + 1}</h2>
-                        ${falhas.length > 1 ? `<button class="button button-danger" onclick="removeFalha(${idx})">Remover</button>` : ''}
-                    </div>
-                    <div class="card-content">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Hora Inicial</label>
-                                <input type="time" value="${falha.horaInicial}" onchange="updateFalha(${idx}, 'horaInicial', this.value)">
-                            </div>
-                            <div class="form-group">
-                                <label>Hora Final</label>
-                                <input type="time" value="${falha.horaFinal}" onchange="updateFalha(${idx}, 'horaFinal', this.value)">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Descrição da Falha</label>
-                            <textarea onchange="updateFalha(${idx}, 'descricao', this.value)">${falha.descricao}</textarea>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
+        // Falhas Logic
         function addFalha() {
             falhas.push({ horaInicial: "", horaFinal: "", descricao: "" });
             renderFalhas();
-            updateSummary();
+            saveDataToStorage();
         }
 
-        function removeFalha(idx) {
-            if (falhas.length > 1) {
-                falhas.splice(idx, 1);
-                renderFalhas();
-                updateSummary();
-            }
+        function removeFalha(index) {
+            falhas.splice(index, 1);
+            if (falhas.length === 0) falhas.push({ horaInicial: "", horaFinal: "", descricao: "" });
+            renderFalhas();
+            saveDataToStorage();
         }
 
-        function updateFalha(idx, field, value) {
-            falhas[idx][field] = value;
-            updateSummary();
+        function updateFalha(index, field, value) {
+            falhas[index][field] = value;
+            saveDataToStorage();
         }
 
-        // Checklist
-        function renderChecklist() {
-            const container = document.getElementById('checklist-container');
-            container.innerHTML = checklist.map(item => `
-                <div class="checklist-item">
-                    <div class="checklist-item-header">
-                        <div class="checklist-item-label">${item.id}. ${item.nome}</div>
-                        <div class="checklist-item-buttons">
-                            <button class="button ${item.status === 'ok' ? 'button-primary' : 'button-outline'}" onclick="updateChecklistItem(${item.id}, 'ok')">✅ OK</button>
-                            <button class="button ${item.status === 'nok' ? 'button-danger' : 'button-outline'}" onclick="updateChecklistItem(${item.id}, 'nok')">❌ NÃO OK</button>
+        function renderFalhas() {
+            const container = document.getElementById('falhas-container');
+            container.innerHTML = '';
+            
+            falhas.forEach((falha, index) => {
+                const div = document.createElement('div');
+                div.className = 'falha-item card';
+                div.innerHTML = `
+                    <div class="falha-header">
+                        <h3>Falha ${index + 1}</h3>
+                        <button class="button button-danger" onclick="removeFalha(${index})">Remover</button>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Hora Inicial</label>
+                            <input type="time" value="${falha.horaInicial}" onchange="updateFalha(${index}, 'horaInicial', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Hora Final</label>
+                            <input type="time" value="${falha.horaFinal}" onchange="updateFalha(${index}, 'horaFinal', this.value)">
                         </div>
                     </div>
-                    ${item.status ? `
-                        <input type="text" placeholder="Observação (opcional)" value="${item.observacao}" onchange="updateChecklistObservacao(${item.id}, this.value)" style="width: 100%; padding: 0.5rem; font-size: 0.875rem;">
-                    ` : ''}
-                </div>
-            `).join('');
+                    <div class="form-group">
+                        <label>Descrição da Falha</label>
+                        <textarea placeholder="Descreva a falha..." oninput="updateFalha(${index}, 'descricao', this.value)">${falha.descricao}</textarea>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
         }
 
-        function updateChecklistItem(id, status) {
+        // Checklist Logic
+        function renderChecklist() {
+            const container = document.getElementById('checklist-container');
+            container.innerHTML = '';
+            
+            checklist.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'checklist-item';
+                div.innerHTML = `
+                    <div class="checklist-item-header">
+                        <span class="checklist-item-label">${item.id}. ${item.nome}</span>
+                        <div class="checklist-item-buttons">
+                            <button class="button ${item.status === 'ok' ? 'button-success' : 'button-outline'}" 
+                                onclick="updateChecklistStatus(${item.id}, 'ok')">OK</button>
+                            <button class="button ${item.status === 'nok' ? 'button-danger' : 'button-outline'}" 
+                                onclick="updateChecklistStatus(${item.id}, 'nok')">NÃO OK</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: 0.5rem;">
+                        <input type="text" placeholder="Observação opcional..." 
+                            value="${item.observacao}" 
+                            oninput="updateChecklistObs(${item.id}, this.value)">
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateChecklistStatus(id, status) {
             const item = checklist.find(i => i.id === id);
             if (item) {
                 item.status = item.status === status ? null : status;
                 renderChecklist();
                 updateSummary();
+                saveDataToStorage();
             }
         }
 
-        function updateChecklistObservacao(id, value) {
+        function updateChecklistObs(id, value) {
             const item = checklist.find(i => i.id === id);
             if (item) {
                 item.observacao = value;
+                saveDataToStorage();
             }
         }
 
@@ -905,7 +922,6 @@
                 await navigator.clipboard.writeText(report);
                 showToast('Relatório formatado copiado para a área de transferência!');
             } catch (err) {
-                // Fallback para dispositivos que não suportam a API de clipboard
                 const textArea = document.createElement("textarea");
                 textArea.value = report;
                 document.body.appendChild(textArea);
@@ -930,16 +946,13 @@
         }
 
         function sendWhatsApp() {
-            downloadPDF();
             const report = generateWhatsAppReport();
-            // O encodeURIComponent garante que emojis e caracteres especiais sejam transmitidos corretamente
             const encodedReport = encodeURIComponent(report);
-            
-            showToast('Gerando relatório e abrindo WhatsApp...');
+            showToast('Abrindo WhatsApp...');
             setTimeout(() => {
                 const whatsappUrl = `https://wa.me/?text=${encodedReport}`;
                 window.open(whatsappUrl, '_blank');
-            }, 1500);
+            }, 1000);
         }
 
         function showToast(message) {
@@ -955,7 +968,7 @@
             }, 3000);
         }
 
-        // PDF Generation Functions
+        // NOVO GERADOR DE PDF - SUPORTA MÚLTIPLAS PÁGINAS
         function generatePDFContent() {
             const data = document.getElementById('data').value || '[Não preenchido]';
             const operador = document.getElementById('operador').value || '[Não preenchido]';
@@ -966,60 +979,66 @@
             const pedidos = document.getElementById('pedidos').value;
 
             let html = `
-                <div style="font-family: Arial, sans-serif; padding: 20px; color: #1f2937; line-height: 1.4; max-width: 900px; margin: auto;">
-                    <div style="border-bottom: 3px solid #2563eb; padding-bottom: 15px; margin-bottom: 20px; text-align: center;">
-                        <h1 style="color: #2563eb; margin: 0; font-size: 22px;">RELATÓRIO COMPLETO DE CHECKLIST</h1>
-                        <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 12px;">Carregadeiras - Inspeção Diária</p>
+                <div style="font-family: 'Inter', Arial, sans-serif; padding: 10px; color: #1f2937; max-width: 800px; margin: auto;">
+                    
+                    <!-- CABEÇALHO - PÁGINA 1 -->
+                    <div style="border-bottom: 4px solid #2563eb; padding-bottom: 20px; margin-bottom: 25px; text-align: center;">
+                        <h1 style="color: #2563eb; margin: 0; font-size: 26px; text-transform: uppercase; letter-spacing: 1px;">Relatório de Inspeção Diária</h1>
+                        <p style="color: #6b7280; margin: 8px 0 0 0; font-size: 14px; font-weight: 500;">Equipamento: Carregadeira</p>
                     </div>
 
-                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
-                        <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                    <!-- BLOCO DE DADOS -->
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 25px;">
+                        <h3 style="color: #1e40af; margin: 0 0 15px 0; font-size: 16px; border-bottom: 1px solid #bfdbfe; padding-bottom: 8px;">DADOS DA OPERAÇÃO</h3>
+                        <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
                             <tr>
-                                <td style="padding: 4px;"><strong>Data:</strong> ${data}</td>
-                                <td style="padding: 4px;"><strong>Turno:</strong> ${turno}</td>
+                                <td style="padding: 6px 0; width: 50%;"><strong>Data:</strong> ${data}</td>
+                                <td style="padding: 6px 0;"><strong>Turno:</strong> ${turno}</td>
                             </tr>
                             <tr>
-                                <td style="padding: 4px;"><strong>Operador:</strong> ${operador}</td>
-                                <td style="padding: 4px;"><strong>Local:</strong> ${local}</td>
+                                <td style="padding: 6px 0;"><strong>Operador:</strong> ${operador}</td>
+                                <td style="padding: 6px 0;"><strong>Local:</strong> ${local}</td>
                             </tr>
                             <tr>
-                                <td style="padding: 4px;"><strong>Máquina:</strong> ${maquina}</td>
-                                <td style="padding: 4px;"></td>
+                                <td style="padding: 6px 0;"><strong>Máquina:</strong> ${maquina}</td>
+                                <td style="padding: 6px 0;"><strong>Status:</strong> Ativo</td>
                             </tr>
                         </table>
                     </div>
 
-                    <div style="margin-bottom: 15px;">
-                        <h3 style="color: #dc2626; border-left: 4px solid #dc2626; padding-left: 10px; margin: 0 0 10px 0; font-size: 14px;">FALHAS REGISTRADAS</h3>
+                    <!-- BLOCO DE FALHAS -->
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="color: #dc2626; border-left: 5px solid #dc2626; padding-left: 12px; margin: 0 0 15px 0; font-size: 16px; text-transform: uppercase;">Falhas Registradas</h3>
             `;
 
             const falhasComDescricao = falhas.filter(f => f.descricao);
             if (falhasComDescricao.length > 0) {
                 falhasComDescricao.forEach((falha, idx) => {
                     html += `
-                        <div style="margin-bottom: 8px; padding: 8px; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 4px;">
-                            <p style="margin: 0; font-size: 11px;"><strong>Falha ${idx + 1}</strong> | <strong>Horário:</strong> ${falha.horaInicial || 'N/I'} às ${falha.horaFinal || 'N/I'}</p>
-                            <p style="margin: 4px 0 0 0; font-size: 10px;"><strong>Descrição:</strong> ${falha.descricao}</p>
+                        <div style="margin-bottom: 12px; padding: 15px; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; page-break-inside: avoid;">
+                            <p style="margin: 0; font-size: 13px; color: #991b1b;"><strong>FALHA ${idx + 1}</strong> | <strong>HORÁRIO:</strong> ${falha.horaInicial || 'N/I'} às ${falha.horaFinal || 'N/I'}</p>
+                            <p style="margin: 8px 0 0 0; font-size: 12px; color: #4b5563; line-height: 1.5;"><strong>DESCRIÇÃO:</strong> ${falha.descricao}</p>
                         </div>
                     `;
                 });
             } else {
-                html += `<p style="margin: 0; font-size: 10px; color: #16a34a;">✓ Nenhuma falha registrada</p>`;
+                html += `<p style="margin: 0; font-size: 13px; color: #16a34a; font-style: italic;">✓ Nenhuma falha mecânica ou operacional registrada durante o turno.</p>`;
             }
             html += `</div>`;
 
-            // CHECKLIST COMPLETO - TODOS OS 36 ITENS
-            html += `<div style="margin-bottom: 15px;">
-                <h3 style="color: #1e40af; border-left: 4px solid #1e40af; padding-left: 10px; margin: 0 0 10px 0; font-size: 14px;">CHECKLIST COMPLETO (36 ITENS)</h3>
-                <table style="width: 100%; font-size: 9px; border-collapse: collapse; border: 1px solid #e2e8f0;">
-                    <thead>
-                        <tr style="background-color: #f3f4f6;">
-                            <th style="padding: 5px; border: 1px solid #e2e8f0; text-align: center; width: 5%;">Status</th>
-                            <th style="padding: 5px; border: 1px solid #e2e8f0; text-align: left;">Item</th>
-                            <th style="padding: 5px; border: 1px solid #e2e8f0; text-align: center; width: 20%;">Resultado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            // BLOCO CHECKLIST - FORÇAR QUEBRA SE NECESSÁRIO
+            html += `
+                <div style="page-break-before: auto; margin-top: 30px;">
+                    <h3 style="color: #1e40af; border-left: 5px solid #1e40af; padding-left: 12px; margin: 0 0 15px 0; font-size: 16px; text-transform: uppercase;">Checklist de Verificação (36 Itens)</h3>
+                    <table style="width: 100%; font-size: 11px; border-collapse: collapse; border: 1px solid #e2e8f0;">
+                        <thead>
+                            <tr style="background-color: #f1f5f9; color: #334155;">
+                                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: center; width: 8%;">Status</th>
+                                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left;">Item de Verificação</th>
+                                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: center; width: 15%;">Resultado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
             `;
 
             let okCount = 0;
@@ -1028,8 +1047,9 @@
 
             checklist.forEach(item => {
                 let statusIcon = '⚪';
-                let statusColor = '#6b7280';
-                let statusText = 'NÃO VERIFICADO';
+                let statusColor = '#64748b';
+                let statusText = 'N/V';
+                let bgColor = '#ffffff';
 
                 if (item.status === 'ok') {
                     statusIcon = '✓';
@@ -1040,38 +1060,38 @@
                     statusIcon = '✗';
                     statusColor = '#dc2626';
                     statusText = 'NÃO OK';
+                    bgColor = '#fff1f2';
                     nokCount++;
                 } else {
                     naoVerificadoCount++;
                 }
 
                 html += `
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 5px; border: 1px solid #e2e8f0; text-align: center; color: ${statusColor}; font-weight: bold;">${statusIcon}</td>
-                        <td style="padding: 5px; border: 1px solid #e2e8f0;">
-                            <strong>${item.id}. ${item.nome}</strong>
-                            ${item.observacao ? `<br><span style="color: #6b7280; font-size: 8px;">Obs: ${item.observacao}</span>` : ''}
+                    <tr style="background-color: ${bgColor}; page-break-inside: avoid;">
+                        <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center; color: ${statusColor}; font-weight: bold; font-size: 14px;">${statusIcon}</td>
+                        <td style="padding: 8px; border: 1px solid #e2e8f0;">
+                            <div style="font-weight: 600; color: #1f2937;">${item.id}. ${item.nome}</div>
+                            ${item.observacao ? `<div style="color: #64748b; font-size: 10px; margin-top: 3px; font-style: italic;">Obs: ${item.observacao}</div>` : ''}
                         </td>
-                        <td style="padding: 5px; border: 1px solid #e2e8f0; text-align: center; color: ${statusColor}; font-weight: bold;">${statusText}</td>
+                        <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center; color: ${statusColor}; font-weight: bold;">${statusText}</td>
                     </tr>
                 `;
             });
 
             html += `
-                    </tbody>
-                </table>
-            </div>`;
+                        </tbody>
+                    </table>
+                </div>
 
-            // RESUMO DO CHECKLIST
-            html += `
-                <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px; margin-bottom: 15px;">
-                    <h4 style="color: #1e3a8a; margin: 0 0 8px 0; font-size: 12px;">RESUMO DO CHECKLIST</h4>
-                    <table style="width: 100%; font-size: 10px; border-collapse: collapse;">
+                <!-- RESUMO FINAL -->
+                <div style="margin-top: 30px; background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 15px; page-break-inside: avoid;">
+                    <h4 style="color: #1e3a8a; margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase;">Resumo da Verificação</h4>
+                    <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
                         <tr>
-                            <td style="padding: 4px;"><strong>✓ OK:</strong> ${okCount}</td>
-                            <td style="padding: 4px;"><strong>✗ NÃO OK:</strong> ${nokCount}</td>
-                            <td style="padding: 4px;"><strong>⚪ NÃO VERIFICADO:</strong> ${naoVerificadoCount}</td>
-                            <td style="padding: 4px;"><strong>Total:</strong> ${checklist.length}</td>
+                            <td style="padding: 5px;"><strong>✅ Itens OK:</strong> ${okCount}</td>
+                            <td style="padding: 5px;"><strong>❌ Itens NÃO OK:</strong> ${nokCount}</td>
+                            <td style="padding: 5px;"><strong>⚪ Não Verificados:</strong> ${naoVerificadoCount}</td>
+                            <td style="padding: 5px; text-align: right;"><strong>TOTAL:</strong> 36 Itens</td>
                         </tr>
                     </table>
                 </div>
@@ -1079,40 +1099,42 @@
 
             // OBSERVAÇÕES E PEDIDOS
             if (observacoes || pedidos) {
-                html += `<div style="margin-bottom: 15px;">`;
+                html += `<div style="margin-top: 25px;">`;
                 if (observacoes) {
                     html += `
-                        <div style="padding: 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 10px;">
-                            <h4 style="color: #475569; margin: 0 0 5px 0; font-size: 11px; text-transform: uppercase;">Observações Gerais</h4>
-                            <p style="margin: 0; font-size: 10px; white-space: pre-wrap;">${observacoes}</p>
+                        <div style="padding: 15px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 15px; page-break-inside: avoid;">
+                            <h4 style="color: #475569; margin: 0 0 8px 0; font-size: 13px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Observações Gerais</h4>
+                            <p style="margin: 0; font-size: 12px; color: #1f2937; white-space: pre-wrap; line-height: 1.6;">${observacoes}</p>
                         </div>
                     `;
                 }
                 if (pedidos) {
                     html += `
-                        <div style="padding: 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
-                            <h4 style="color: #475569; margin: 0 0 5px 0; font-size: 11px; text-transform: uppercase;">Pedidos / Solicitações</h4>
-                            <p style="margin: 0; font-size: 10px; white-space: pre-wrap;">${pedidos}</p>
+                        <div style="padding: 15px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; page-break-inside: avoid;">
+                            <h4 style="color: #475569; margin: 0 0 8px 0; font-size: 13px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Pedidos / Solicitações</h4>
+                            <p style="margin: 0; font-size: 12px; color: #1f2937; white-space: pre-wrap; line-height: 1.6;">${pedidos}</p>
                         </div>
                     `;
                 }
                 html += `</div>`;
-            } else {
-                html += `
-                    <div style="padding: 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 15px;">
-                        <p style="margin: 0; font-size: 10px; color: #6b7280;">Nenhuma observação ou pedido registrado</p>
-                    </div>
-                `;
             }
 
-            // ASSINATURAS
+            // ASSINATURAS - SEMPRE AO FINAL
             html += `
-                <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center;">
-                    <div style="display: flex; justify-content: space-around; margin-bottom: 15px;">
-                        <div style="border-top: 1px solid #475569; width: 180px; padding-top: 4px; font-size: 9px; color: #475569;">Assinatura do Operador</div>
-                        <div style="border-top: 1px solid #475569; width: 180px; padding-top: 4px; font-size: 9px; color: #475569;">Assinatura do Supervisor</div>
+                <div style="margin-top: 50px; padding-top: 20px; text-align: center; page-break-inside: avoid;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 30px; padding: 0 40px;">
+                        <div style="width: 250px;">
+                            <div style="border-top: 1.5px solid #475569; padding-top: 8px; font-size: 11px; color: #475569; font-weight: 600;">Assinatura do Operador</div>
+                            <div style="font-size: 9px; color: #94a3b8; margin-top: 4px;">${operador}</div>
+                        </div>
+                        <div style="width: 250px;">
+                            <div style="border-top: 1.5px solid #475569; padding-top: 8px; font-size: 11px; color: #475569; font-weight: 600;">Assinatura do Supervisor</div>
+                            <div style="font-size: 9px; color: #94a3b8; margin-top: 4px;">Fiscalização Técnica</div>
+                        </div>
                     </div>
-                    <p style="color: #94a3b8; font-size: 8px; margin: 0;">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</p>
+                    <div style="background-color: #f1f5f9; padding: 10px; border-radius: 5px; display: inline-block;">
+                        <p style="color: #64748b; font-size: 10px; margin: 0; font-weight: 500;">Relatório gerado eletronicamente em ${new Date().toLocaleString('pt-BR')}</p>
+                    </div>
                 </div>
             </div>`;
             return html;
@@ -1122,15 +1144,38 @@
             const data = document.getElementById('data').value || 'checklist';
             const element = document.createElement('div');
             element.innerHTML = generatePDFContent();
+            
+            // CONFIGURAÇÕES PARA MÚLTIPLAS PÁGINAS
             const opt = {
-                margin: 10,
+                margin: [15, 15, 15, 15], // Margens: topo, esquerda, baixo, direita
                 filename: `checklist-carregadeiras-${data}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+                html2canvas: { 
+                    scale: 2, 
+                    useCORS: true,
+                    letterRendering: true,
+                    logging: false
+                },
+                jsPDF: { 
+                    orientation: 'portrait', 
+                    unit: 'mm', 
+                    format: 'a4',
+                    putOnlyUsedFonts: true
+                },
+                pagebreak: { 
+                    mode: ['avoid-all', 'css', 'legacy'],
+                    before: '.page-break-before',
+                    avoid: 'tr, .falha-item, .card'
+                }
             };
+
+            showToast('Gerando PDF com múltiplas páginas...');
+            
             html2pdf().set(opt).from(element).save().then(() => {
-                showToast('PDF Profissional baixado com sucesso!');
+                showToast('PDF Gerado com Sucesso!');
+            }).catch(err => {
+                console.error('Erro ao gerar PDF:', err);
+                showToast('Erro ao gerar PDF. Tente novamente.');
             });
         }
 
