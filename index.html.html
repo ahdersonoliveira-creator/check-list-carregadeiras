@@ -217,7 +217,7 @@
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            min-height: 44px; /* Touch target size */
+            min-height: 44px;
         }
 
         .button-primary {
@@ -410,7 +410,7 @@
             input, textarea, select {
                 -webkit-user-select: text;
                 user-select: text;
-                font-size: 16px; /* Prevents zoom on iOS */
+                font-size: 16px;
             }
 
             .header h1 {
@@ -430,7 +430,6 @@
             }
         }
 
-        /* Prevent double-tap zoom on buttons */
         button {
             touch-action: manipulation;
         }
@@ -475,7 +474,6 @@
             }
         }
 
-        /* Mobile toast positioning */
         @media (max-width: 640px) {
             .toast {
                 bottom: 1rem;
@@ -554,7 +552,7 @@
             <div id="checklist" class="tab-content">
                 <div class="card">
                     <div class="card-header">
-                        <h2>Checklist de Verificação (35 Itens)</h2>
+                        <h2>Checklist de Verificação</h2>
                     </div>
                     <div class="card-content">
                         <div class="checklist-container" id="checklist-container"></div>
@@ -584,7 +582,7 @@
                             <ul>
                                 <li>✓ Dados básicos: <span id="summary-dados">Incompleto</span></li>
                                 <li>✓ Falhas registradas: <span id="summary-falhas">0</span></li>
-                                <li>✓ Itens verificados: <span id="summary-checklist">0</span>/35</li>
+                                <li>✓ Itens verificados: <span id="summary-checklist">0</span>/36</li>
                             </ul>
                         </div>
 
@@ -606,41 +604,42 @@
 
     <script>
         const CHECKLIST_ITEMS = [
-            "Nível do óleo",
-            "Limpeza do filtro de ar do motor",
-            "Estado das correias do alternador A/C",
-            "Nível do líquido de arrefecedor",
-            "Filtro separador de combustível",
-            "Limpeza dos radiadores",
-            "Limpeza do condensador do ar condicionado",
-            "Vazamento no motor",
-            "Nível do óleo hidráulico",
-            "Estado das mangueiras hidráulicas",
-            "Estado dos cilindros hidráulicos",
-            "Lubrificação dos pinos de articulação",
-            "Lubrificação do cardan",
-            "Caçamba - Lâmina - Dentes",
-            "Bordas cortantes",
-            "Folgas nos pontos de articulação",
-            "Vazamento no sistema hidráulico",
-            "Limpeza da cabine",
-            "Retrovisores",
-            "Funcionamento do ar condicionado",
-            "Faróis de serviço e sinalização",
-            "Falhas ativas no painel",
-            "Filtros hidráulicos",
-            "Limpador de para-brisa",
-            "Cinto de segurança",
-            "Filtro de ar condicionado (int. e ext.)",
-            "Freio e acelerador",
-            "Buzina",
-            "Alavancas em gerais",
-            "Vidros",
-            "Tampas do compartimento do motor",
-            "Contra peso",
-            "Escadas laterais",
-            "Baterias",
-            "Alarme de ré"
+            "VERIFICAR NÍVEL DO ÓLEO",
+            "FILTRO DE AR DO MOTOR (CONDIÇÃO E LIMPEZA)",
+            "VERIFICAR CONDIÇÃO DAS CORREIAS DO ALTERNADOR A/C",
+            "NÍVEL DO LIQUIDO ARREFECEDOR",
+            "FILTRO SEPARADOR DE COMBUSTÍVEL (DRENAR SE NECESSÁRIO)",
+            "CONDIÇÃO DE LIMPEZA DOS RADIADORES",
+            "CONDIÇÃO DE LIMPEZA DO CONDENSADOR DO AR CONDICIONADO",
+            "VAZAMENTO NO MOTOR",
+            "VERIFICAR NÍVEL DO ÓLEO HIDRÁULICO",
+            "VERIFICAR CONDIÇÕES DAS MANGUEIRAS HIDRÁULICAS",
+            "VERIFICAR AS CONDIÇÕES DOS CILINDROS HIDRÁULICOS",
+            "LUBRIFICAÇÃO DOS PINOS DE ARTICULAÇÃO",
+            "LUBRIFICAÇÃO DO CARDAN",
+            "CAÇAMBA - LÂMINA – DENTES",
+            "BORDAS CORTANTES",
+            "VERIFICAR FOLGAS EM PONTOS DE ARTICULAÇÃO (CONCHA, MEIO, CILINDROS E CRUZETAS)",
+            "VAZAMENTOS NO SISTEMA HIDRÁULICO",
+            "LIMPEZA DA CABINE",
+            "RETROVISORES",
+            "FUNCIONAMENTO DO AR CONDICIONADO",
+            "FARÓIS DE SERVIÇO E SINALIZAÇÃO",
+            "FALHAS ATIVAS NO PAINEL",
+            "VERIFICAR FILTRO HIDRÁULICOS",
+            "MANUTENÇÕES PREVENTIVAS",
+            "LIMPADOR DO PARA-BRISA",
+            "CINTO DE SEGURANÇA",
+            "FILTRO DO AR CONDICIONADO (INTERNO E EXTERNO)",
+            "FREIO / ACELERADOR",
+            "BUZINA",
+            "ALAVANCA DO EQUIPAMENTO DE TRABALHO",
+            "VIDROS",
+            "TAMPAS DE COMPARTIMENTO DO MOTOR",
+            "CONTRA PESO",
+            "ESCADAS LATERAIS",
+            "BATERIAS",
+            "ALARME DE RÉ"
         ];
 
         let falhas = [{ horaInicial: "", horaFinal: "", descricao: "" }];
@@ -694,7 +693,18 @@
                     if (data.observacoes) document.getElementById('observacoes').value = data.observacoes;
                     if (data.pedidos) document.getElementById('pedidos').value = data.pedidos;
                     if (data.falhas) falhas = data.falhas;
-                    if (data.checklist) checklist = data.checklist;
+                    if (data.checklist) {
+                        const oldChecklist = data.checklist;
+                        checklist = CHECKLIST_ITEMS.map((nome, idx) => {
+                            const oldItem = oldChecklist.find(i => i.nome === nome);
+                            return {
+                                id: idx + 1,
+                                nome,
+                                status: oldItem ? oldItem.status : null,
+                                observacao: oldItem ? oldItem.observacao : ""
+                            };
+                        });
+                    }
                 }
             } catch (e) {
                 console.log('Erro ao carregar dados:', e);
@@ -705,12 +715,9 @@
         function switchTab(event, tabName) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            
-            // Handle both direct event and manual calls
-            const target = event.currentTarget || event.target;
+            const target = document.getElementById(tabName);
             if (target) target.classList.add('active');
-            
+            event.currentTarget.classList.add('active');
             updateSummary();
         }
 
@@ -802,7 +809,6 @@
             const data = document.getElementById('data').value;
             const operador = document.getElementById('operador').value;
             const maquina = document.getElementById('maquina').value;
-
             document.getElementById('summary-dados').textContent = (data && operador && maquina) ? 'Completo' : 'Incompleto';
             document.getElementById('summary-falhas').textContent = falhas.filter(f => f.descricao).length;
             document.getElementById('summary-checklist').textContent = checklist.filter(c => c.status).length;
@@ -818,63 +824,100 @@
             const observacoes = document.getElementById('observacoes').value;
             const pedidos = document.getElementById('pedidos').value;
 
-            let report = `*📋 RELATÓRIO DE INSPEÇÃO - CARREGADEIRAS*\n`;
-            report += `------------------------------------------\n`;
-            report += `*🔹 DADOS BÁSICOS*\n`;
-            report += `*📅 Data:* ${data}\n`;
-            report += `*👤 Operador:* ${operador}\n`;
-            report += `*🚜 Máquina:* ${maquina}\n`;
-            report += `*🕒 Turno:* ${turno}\n`;
-            report += `*📍 Local:* ${local}\n\n`;
+            let report = '';
+            report += '📋 RELATÓRIO DE FALHA E CHECKLIST - CARREGADEIRAS\n';
+            report += '🔹 DADOS BÁSICOS\n';
+            report += 'Data: ' + data + '\n';
+            report += 'Operador: ' + operador + '\n';
+            report += 'Máquina: ' + maquina + '\n';
+            report += 'Turno: ' + turno + '\n';
+            report += 'Local: ' + local + '\n\n';
 
+            report += '⚠️ FALHAS REGISTRADAS\n';
             const falhasComDescricao = falhas.filter(f => f.descricao);
             if (falhasComDescricao.length > 0) {
-                report += `*⚠️ FALHAS REGISTRADAS*\n`;
                 falhasComDescricao.forEach((falha, idx) => {
-                    report += `\n*Falha ${idx + 1}:*\n`;
-                    report += `  - Horário: ${falha.horaInicial || '?' } às ${falha.horaFinal || '?' }\n`;
-                    report += `  - Descrição: ${falha.descricao}\n`;
-                });
-                report += `\n`;
-            }
-
-            report += `*✅ CHECKLIST DE VERIFICAÇÃO*\n`;
-            checklist.forEach(item => {
-                if (item.status) {
-                    const statusIcon = item.status === 'ok' ? '🟢' : '🔴';
-                    const statusText = item.status === 'ok' ? 'OK' : 'NÃO OK';
-                    report += `${statusIcon} *${item.nome}:* ${statusText}`;
-                    if (item.observacao) {
-                        report += ` _(Obs: ${item.observacao})_`;
+                    report += 'Falha ' + (idx + 1) + ': ' + falha.descricao + '\n';
+                    if (falha.horaInicial || falha.horaFinal) {
+                        report += '  Horário: ' + (falha.horaInicial || 'N/I') + ' às ' + (falha.horaFinal || 'N/I') + '\n';
                     }
-                    report += `\n`;
+                });
+            } else {
+                report += 'Nenhuma falha registrada\n';
+            }
+            report += '\n';
+
+            report += '✅ CHECKLIST (' + checklist.length + ' ITENS)\n';
+            
+            let okCount = 0;
+            let nokCount = 0;
+            let naoVerificadoCount = 0;
+            
+            checklist.forEach(item => {
+                let statusIcon = '';
+                let statusText = '';
+                
+                if (item.status === 'ok') {
+                    statusIcon = '✅';
+                    statusText = 'OK';
+                    okCount++;
+                } else if (item.status === 'nok') {
+                    statusIcon = '❌';
+                    statusText = 'NÃO OK';
+                    nokCount++;
+                } else {
+                    statusIcon = '⚪';
+                    statusText = '';
+                    naoVerificadoCount++;
                 }
+                
+                report += item.id + '. ' + item.nome + ': ' + statusIcon;
+                if (statusText) {
+                    report += ' ' + statusText;
+                }
+                if (item.observacao) {
+                    report += '\n   Obs: ' + item.observacao;
+                }
+                report += '\n';
             });
+            
+            report += '\n📊 RESUMO\n';
+            report += '✅ OK: ' + okCount + '\n';
+            report += '❌ NÃO OK: ' + nokCount + '\n';
+            report += '⚪ NÃO VERIFICADO: ' + naoVerificadoCount + '\n\n';
 
             if (observacoes) {
-                report += `\n*📝 OBSERVAÇÕES GERAIS*\n${observacoes}\n`;
+                report += '📝 OBSERVAÇÕES\n' + observacoes + '\n\n';
             }
 
             if (pedidos) {
-                report += `\n*📦 PEDIDOS/SOLICITAÇÕES*\n${pedidos}\n`;
+                report += '📦 PEDIDOS/SOLICITAÇÕES\n' + pedidos + '\n\n';
             }
 
-            report += `\n------------------------------------------\n`;
-            report += `*📄 O PDF PROFISSIONAL FOI BAIXADO.*\n`;
-            report += `*POR FAVOR, ANEXE-O A ESTA CONVERSA.*`;
-
+            report += '_Gerado em: ' + new Date().toLocaleString('pt-BR') + '_';
+            
             return report;
         }
 
-        function copyReport() {
-            const report = generateWhatsAppReport().replace(/\*/g, ''); // Remove bold for clipboard
-            navigator.clipboard.writeText(report).then(() => {
-                showToast('Relatório copiado para a área de transferência!');
-            });
+        async function copyReport() {
+            const report = generateWhatsAppReport();
+            try {
+                await navigator.clipboard.writeText(report);
+                showToast('Relatório formatado copiado para a área de transferência!');
+            } catch (err) {
+                // Fallback para dispositivos que não suportam a API de clipboard
+                const textArea = document.createElement("textarea");
+                textArea.value = report;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showToast('Relatório copiado!');
+            }
         }
 
         function downloadReport() {
-            const report = generateWhatsAppReport().replace(/\*/g, '');
+            const report = generateWhatsAppReport();
             const data = document.getElementById('data').value || 'checklist';
             const element = document.createElement('a');
             element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(report));
@@ -887,26 +930,21 @@
         }
 
         function sendWhatsApp() {
-            // Gera o PDF Profissional
             downloadPDF();
-            
-            // Gera o relatório organizado para o WhatsApp
             const report = generateWhatsAppReport();
+            // O encodeURIComponent garante que emojis e caracteres especiais sejam transmitidos corretamente
             const encodedReport = encodeURIComponent(report);
             
-            showToast('Gerando PDF e organizando WhatsApp...');
-            
+            showToast('Gerando relatório e abrindo WhatsApp...');
             setTimeout(() => {
-                window.open(`https://wa.me/?text=${encodedReport}`, '_blank');
-            }, 2000);
+                const whatsappUrl = `https://wa.me/?text=${encodedReport}`;
+                window.open(whatsappUrl, '_blank');
+            }, 1500);
         }
 
         function showToast(message) {
             const existingToasts = document.querySelectorAll(".toast");
-            if (existingToasts.length > 0) {
-                existingToasts.forEach(t => t.remove());
-            }
-
+            if (existingToasts.length > 0) existingToasts.forEach(t => t.remove());
             const toast = document.createElement('div');
             toast.className = 'toast success';
             toast.textContent = message;
@@ -928,111 +966,155 @@
             const pedidos = document.getElementById('pedidos').value;
 
             let html = `
-                <div style="font-family: Arial, sans-serif; padding: 30px; color: #1f2937; line-height: 1.5; max-width: 800px; margin: auto;">
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #1f2937; line-height: 1.4; max-width: 900px; margin: auto;">
                     <div style="border-bottom: 3px solid #2563eb; padding-bottom: 15px; margin-bottom: 20px; text-align: center;">
-                        <h1 style="color: #2563eb; margin: 0; font-size: 24px;">RELATÓRIO DE CHECKLIST PROFISSIONAL</h1>
-                        <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">Carregadeiras - Inspeção Diária</p>
+                        <h1 style="color: #2563eb; margin: 0; font-size: 22px;">RELATÓRIO COMPLETO DE CHECKLIST</h1>
+                        <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 12px;">Carregadeiras - Inspeção Diária</p>
                     </div>
 
-                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                        <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+                        <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
                             <tr>
-                                <td style="padding: 5px;"><strong>Data:</strong> ${data}</td>
-                                <td style="padding: 5px;"><strong>Turno:</strong> ${turno}</td>
+                                <td style="padding: 4px;"><strong>Data:</strong> ${data}</td>
+                                <td style="padding: 4px;"><strong>Turno:</strong> ${turno}</td>
                             </tr>
                             <tr>
-                                <td style="padding: 5px;"><strong>Operador:</strong> ${operador}</td>
-                                <td style="padding: 5px;"><strong>Local:</strong> ${local}</td>
+                                <td style="padding: 4px;"><strong>Operador:</strong> ${operador}</td>
+                                <td style="padding: 4px;"><strong>Local:</strong> ${local}</td>
                             </tr>
                             <tr>
-                                <td style="padding: 5px;"><strong>Máquina:</strong> ${maquina}</td>
-                                <td style="padding: 5px;"></td>
+                                <td style="padding: 4px;"><strong>Máquina:</strong> ${maquina}</td>
+                                <td style="padding: 4px;"></td>
                             </tr>
                         </table>
                     </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <h3 style="color: #dc2626; border-left: 4px solid #dc2626; padding-left: 10px; margin: 0 0 10px 0; font-size: 14px;">FALHAS REGISTRADAS</h3>
             `;
 
             const falhasComDescricao = falhas.filter(f => f.descricao);
             if (falhasComDescricao.length > 0) {
-                html += `<div style="margin-bottom: 20px;"><h3 style="color: #dc2626; border-left: 4px solid #dc2626; padding-left: 10px; margin-bottom: 10px; font-size: 16px;">FALHAS REGISTRADAS</h3>`;
                 falhasComDescricao.forEach((falha, idx) => {
                     html += `
-                        <div style="margin-bottom: 10px; padding: 10px; background-color: #fff1f2; border: 1px solid #fecaca; border-radius: 6px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <strong style="color: #991b1b; font-size: 12px;">Falha ${idx + 1}</strong>
-                                <span style="font-size: 10px; color: #b91c1c;">${falha.horaInicial} - ${falha.horaFinal}</span>
-                            </div>
-                            <p style="margin: 0; color: #1f2937; font-size: 11px;">${falha.descricao}</p>
+                        <div style="margin-bottom: 8px; padding: 8px; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 4px;">
+                            <p style="margin: 0; font-size: 11px;"><strong>Falha ${idx + 1}</strong> | <strong>Horário:</strong> ${falha.horaInicial || 'N/I'} às ${falha.horaFinal || 'N/I'}</p>
+                            <p style="margin: 4px 0 0 0; font-size: 10px;"><strong>Descrição:</strong> ${falha.descricao}</p>
                         </div>
                     `;
                 });
-                html += `</div>`;
+            } else {
+                html += `<p style="margin: 0; font-size: 10px; color: #16a34a;">✓ Nenhuma falha registrada</p>`;
             }
+            html += `</div>`;
 
-            html += `
-                <div style="margin-bottom: 20px;">
-                    <h3 style="color: #2563eb; border-left: 4px solid #2563eb; padding-left: 10px; margin-bottom: 10px; font-size: 16px;">CHECKLIST DE VERIFICAÇÃO</h3>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
-                        <thead>
-                            <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-                                <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0; width: 30px;">#</th>
-                                <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Item</th>
-                                <th style="padding: 8px; text-align: center; border: 1px solid #e2e8f0; width: 80px;">Status</th>
-                                <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Observações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+            // CHECKLIST COMPLETO - TODOS OS 36 ITENS
+            html += `<div style="margin-bottom: 15px;">
+                <h3 style="color: #1e40af; border-left: 4px solid #1e40af; padding-left: 10px; margin: 0 0 10px 0; font-size: 14px;">CHECKLIST COMPLETO (36 ITENS)</h3>
+                <table style="width: 100%; font-size: 9px; border-collapse: collapse; border: 1px solid #e2e8f0;">
+                    <thead>
+                        <tr style="background-color: #f3f4f6;">
+                            <th style="padding: 5px; border: 1px solid #e2e8f0; text-align: center; width: 5%;">Status</th>
+                            <th style="padding: 5px; border: 1px solid #e2e8f0; text-align: left;">Item</th>
+                            <th style="padding: 5px; border: 1px solid #e2e8f0; text-align: center; width: 20%;">Resultado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
             `;
 
+            let okCount = 0;
+            let nokCount = 0;
+            let naoVerificadoCount = 0;
+
             checklist.forEach(item => {
-                const status = item.status === 'ok' ? 'OK' : item.status === 'nok' ? 'NÃO OK' : 'N/V';
-                const statusColor = item.status === 'ok' ? '#16a34a' : item.status === 'nok' ? '#dc2626' : '#94a3b8';
-                const rowBg = item.status === 'nok' ? '#fff1f2' : 'transparent';
-                
+                let statusIcon = '⚪';
+                let statusColor = '#6b7280';
+                let statusText = 'NÃO VERIFICADO';
+
+                if (item.status === 'ok') {
+                    statusIcon = '✓';
+                    statusColor = '#16a34a';
+                    statusText = 'OK';
+                    okCount++;
+                } else if (item.status === 'nok') {
+                    statusIcon = '✗';
+                    statusColor = '#dc2626';
+                    statusText = 'NÃO OK';
+                    nokCount++;
+                } else {
+                    naoVerificadoCount++;
+                }
+
                 html += `
-                    <tr style="background-color: ${rowBg};">
-                        <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: center;">${item.id}</td>
-                        <td style="padding: 6px; border: 1px solid #e2e8f0; font-weight: 500;">${item.nome}</td>
-                        <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: center; color: ${statusColor}; font-weight: bold;">${status}</td>
-                        <td style="padding: 6px; border: 1px solid #e2e8f0; font-style: italic; color: #64748b;">${item.observacao || '-'}</td>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 5px; border: 1px solid #e2e8f0; text-align: center; color: ${statusColor}; font-weight: bold;">${statusIcon}</td>
+                        <td style="padding: 5px; border: 1px solid #e2e8f0;">
+                            <strong>${item.id}. ${item.nome}</strong>
+                            ${item.observacao ? `<br><span style="color: #6b7280; font-size: 8px;">Obs: ${item.observacao}</span>` : ''}
+                        </td>
+                        <td style="padding: 5px; border: 1px solid #e2e8f0; text-align: center; color: ${statusColor}; font-weight: bold;">${statusText}</td>
                     </tr>
                 `;
             });
 
-            html += `</tbody></table></div>`;
+            html += `
+                    </tbody>
+                </table>
+            </div>`;
 
+            // RESUMO DO CHECKLIST
+            html += `
+                <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px; margin-bottom: 15px;">
+                    <h4 style="color: #1e3a8a; margin: 0 0 8px 0; font-size: 12px;">RESUMO DO CHECKLIST</h4>
+                    <table style="width: 100%; font-size: 10px; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 4px;"><strong>✓ OK:</strong> ${okCount}</td>
+                            <td style="padding: 4px;"><strong>✗ NÃO OK:</strong> ${nokCount}</td>
+                            <td style="padding: 4px;"><strong>⚪ NÃO VERIFICADO:</strong> ${naoVerificadoCount}</td>
+                            <td style="padding: 4px;"><strong>Total:</strong> ${checklist.length}</td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+
+            // OBSERVAÇÕES E PEDIDOS
             if (observacoes || pedidos) {
-                html += `<div style="display: table; width: 100%; margin-bottom: 20px; table-layout: fixed;">`;
-                html += `<div style="display: table-row;">`;
+                html += `<div style="margin-bottom: 15px;">`;
                 if (observacoes) {
                     html += `
-                        <div style="display: table-cell; padding: 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; vertical-align: top;">
-                            <h4 style="color: #475569; margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase;">Observações Gerais</h4>
-                            <p style="margin: 0; font-size: 11px; white-space: pre-wrap;">${observacoes}</p>
+                        <div style="padding: 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 10px;">
+                            <h4 style="color: #475569; margin: 0 0 5px 0; font-size: 11px; text-transform: uppercase;">Observações Gerais</h4>
+                            <p style="margin: 0; font-size: 10px; white-space: pre-wrap;">${observacoes}</p>
                         </div>
                     `;
                 }
                 if (pedidos) {
                     html += `
-                        <div style="display: table-cell; padding: 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; vertical-align: top;">
-                            <h4 style="color: #475569; margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase;">Pedidos / Solicitações</h4>
-                            <p style="margin: 0; font-size: 11px; white-space: pre-wrap;">${pedidos}</p>
+                        <div style="padding: 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                            <h4 style="color: #475569; margin: 0 0 5px 0; font-size: 11px; text-transform: uppercase;">Pedidos / Solicitações</h4>
+                            <p style="margin: 0; font-size: 10px; white-space: pre-wrap;">${pedidos}</p>
                         </div>
                     `;
                 }
-                html += `</div></div>`;
+                html += `</div>`;
+            } else {
+                html += `
+                    <div style="padding: 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 15px;">
+                        <p style="margin: 0; font-size: 10px; color: #6b7280;">Nenhuma observação ou pedido registrado</p>
+                    </div>
+                `;
             }
 
+            // ASSINATURAS
             html += `
-                <div style="margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center;">
-                    <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
-                        <div style="border-top: 1px solid #475569; width: 200px; padding-top: 5px; font-size: 10px; color: #475569;">Assinatura do Operador</div>
-                        <div style="border-top: 1px solid #475569; width: 200px; padding-top: 5px; font-size: 10px; color: #475569;">Assinatura do Supervisor</div>
+                <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center;">
+                    <div style="display: flex; justify-content: space-around; margin-bottom: 15px;">
+                        <div style="border-top: 1px solid #475569; width: 180px; padding-top: 4px; font-size: 9px; color: #475569;">Assinatura do Operador</div>
+                        <div style="border-top: 1px solid #475569; width: 180px; padding-top: 4px; font-size: 9px; color: #475569;">Assinatura do Supervisor</div>
                     </div>
-                    <p style="color: #94a3b8; font-size: 9px; margin: 0;">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</p>
+                    <p style="color: #94a3b8; font-size: 8px; margin: 0;">Relatório gerado em ${new Date().toLocaleString('pt-BR')}</p>
                 </div>
             </div>`;
-
             return html;
         }
 
@@ -1040,7 +1122,6 @@
             const data = document.getElementById('data').value || 'checklist';
             const element = document.createElement('div');
             element.innerHTML = generatePDFContent();
-            
             const opt = {
                 margin: 10,
                 filename: `checklist-carregadeiras-${data}.pdf`,
@@ -1048,7 +1129,6 @@
                 html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
             };
-            
             html2pdf().set(opt).from(element).save().then(() => {
                 showToast('PDF Profissional baixado com sucesso!');
             });
@@ -1062,7 +1142,6 @@
                 window.open(`https://wa.me/?text=${encodedReport}`, '_blank');
             }, 2000);
         }
-
     </script>
 </body>
 </html>
